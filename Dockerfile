@@ -1,14 +1,23 @@
-# Use official Java 17 image
-FROM eclipse-temurin:17-jre
-
-# Set working directory
+# --------- Build stage ---------
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy the built jar into the container
-COPY target/cataloghub-1.0.0.jar app.jar
+# Copy pom.xml and source code
+COPY pom.xml .
+COPY src ./src
 
-# Expose port (Render will set PORT env var)
-EXPOSE 8080
+# Build the application
+RUN mvn clean package -DskipTests
+
+# --------- Run stage ---------
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# Copy jar from build stage
+COPY --from=build /app/target/cataloghub-1.0.0.jar app.jar
+
+# Expose port (Render sets PORT env var)
+EXPOSE 8085
 
 # Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]
